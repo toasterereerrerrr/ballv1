@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tilt Ball Game</title>
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+    background: #111;
+  }
+  canvas {
+    display: block;
+  }
+  #start {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 20px;
+    padding: 12px 20px;
+  }
+</style>
+</head>
+<body>
+
+<button id="start">Start Game</button>
+<canvas id="game"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+canvas.width = innerWidth;
+canvas.height = innerHeight;
+
+let ball = { x: canvas.width/2, y: canvas.height/2, r: 15 };
+let tiltX = 0, tiltY = 0;
+
+document.getElementById("start").onclick = async () => {
+  if (typeof DeviceOrientationEvent.requestPermission === "function") {
+    await DeviceOrientationEvent.requestPermission();
+  }
+  document.getElementById("start").remove();
+};
+
+window.addEventListener("deviceorientation", e => {
+  tiltX = e.gamma || 0; // left/right
+  tiltY = e.beta || 0;  // forward/back
+});
+
+function update() {
+  ball.x += tiltX * 0.3;
+  ball.y += tiltY * 0.3;
+
+  ball.x = Math.max(ball.r, Math.min(canvas.width - ball.r, ball.x));
+  ball.y = Math.max(ball.r, Math.min(canvas.height - ball.r, ball.y));
+}
+
+function draw() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = "cyan";
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2);
+  ctx.fill();
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+
+</body>
+</html>
