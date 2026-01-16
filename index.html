@@ -42,9 +42,9 @@ const ball = {
 let tiltX = 0, tiltY = 0;
 
 const ACCEL = 0.6;      // tilt strength
-const FRICTION = 0.99; // air resistance
+const FRICTION = 0.999; // air resistance
 const BOUNCE = 0.8;    // wall energy loss
-const MAX_SPEED = 25;
+const MAX_SPEED = 20;
 
 document.getElementById("start").onclick = async () => {
   if (typeof DeviceOrientationEvent?.requestPermission === "function") {
