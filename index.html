@@ -2,16 +2,14 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ball</title>
+<title>Ball Physics</title>
 <style>
   body {
     margin: 0;
     overflow: hidden;
     background: #111;
   }
-  canvas {
-    display: block;
-  }
+  canvas { display: block; }
   #start {
     position: fixed;
     top: 50%;
@@ -33,34 +31,74 @@ const ctx = canvas.getContext("2d");
 canvas.width = innerWidth;
 canvas.height = innerHeight;
 
-let ball = { x: canvas.width/2, y: canvas.height/2, r: 15 };
+const ball = {
+  x: canvas.width / 2,
+  y: canvas.height / 2,
+  r: 15,
+  vx: 0,
+  vy: 0
+};
+
 let tiltX = 0, tiltY = 0;
 
+const ACCEL = 0.6;      // tilt strength
+const FRICTION = 0.99; // air resistance
+const BOUNCE = 0.8;    // wall energy loss
+const MAX_SPEED = 25;
+
 document.getElementById("start").onclick = async () => {
-  if (typeof DeviceOrientationEvent.requestPermission === "function") {
+  if (typeof DeviceOrientationEvent?.requestPermission === "function") {
     await DeviceOrientationEvent.requestPermission();
   }
   document.getElementById("start").remove();
 };
 
 window.addEventListener("deviceorientation", e => {
-  tiltX = e.gamma || 0; 
-  tiltY = e.beta || 0;  
+  tiltX = (e.gamma || 0) / 30;
+  tiltY = (e.beta || 0) / 30;
 });
 
 function update() {
-  ball.x += tiltX * 0.3;
-  ball.y += tiltY * 0.3;
+  // acceleration from tilt
+  ball.vx += tiltX * ACCEL;
+  ball.vy += tiltY * ACCEL;
 
-  ball.x = Math.max(ball.r, Math.min(canvas.width - ball.r, ball.x));
-  ball.y = Math.max(ball.r, Math.min(canvas.height - ball.r, ball.y));
+  // clamp speed
+  ball.vx = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, ball.vx));
+  ball.vy = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, ball.vy));
+
+  // apply friction
+  ball.vx *= FRICTION;
+  ball.vy *= FRICTION;
+
+  // move
+  ball.x += ball.vx;
+  ball.y += ball.vy;
+
+  // wall collisions
+  if (ball.x < ball.r) {
+    ball.x = ball.r;
+    ball.vx *= -BOUNCE;
+  }
+  if (ball.x > canvas.width - ball.r) {
+    ball.x = canvas.width - ball.r;
+    ball.vx *= -BOUNCE;
+  }
+  if (ball.y < ball.r) {
+    ball.y = ball.r;
+    ball.vy *= -BOUNCE;
+  }
+  if (ball.y > canvas.height - ball.r) {
+    ball.y = canvas.height - ball.r;
+    ball.vy *= -BOUNCE;
+  }
 }
 
 function draw() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = "cyan";
   ctx.beginPath();
-  ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2);
+  ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
   ctx.fill();
 }
 
