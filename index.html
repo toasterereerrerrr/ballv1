@@ -8,21 +8,28 @@
     margin: 0;
     overflow: hidden;
     background: #111;
+    font-family: sans-serif;
+    color: white;
+    text-align: center;
   }
   canvas { display: block; }
-  #start {
+  #start, #menu {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     font-size: 20px;
     padding: 12px 20px;
+    cursor: pointer;
   }
 </style>
 </head>
 <body>
 
-<button id="start">Start Game</button>
+<div id="menu">
+  <h1>Ball Game</h1>
+  <button id="start">Start Game</button>
+</div>
 <canvas id="game"></canvas>
 
 <script>
@@ -41,16 +48,27 @@ const ball = {
 
 let tiltX = 0, tiltY = 0;
 
-const ACCEL = 0.5;      // tilt strength
-const FRICTION = 0.99; // air resistance
-const BOUNCE = 0.9;    // wall energy loss
+const ACCEL = 0.5;
+const FRICTION = 0.99;
+const BOUNCE = 0.9;
 const MAX_SPEED = 20;
+
+let gameRunning = false;
+
+// Hole position
+const hole = {
+  x: canvas.width / 4,
+  y: canvas.height / 2,
+  r: 30
+};
 
 document.getElementById("start").onclick = async () => {
   if (typeof DeviceOrientationEvent?.requestPermission === "function") {
     await DeviceOrientationEvent.requestPermission();
   }
-  document.getElementById("start").remove();
+  document.getElementById("menu").style.display = "none";
+  resetBall();
+  gameRunning = true;
 };
 
 window.addEventListener("deviceorientation", e => {
@@ -58,7 +76,16 @@ window.addEventListener("deviceorientation", e => {
   tiltY = (e.beta || 0) / 30;
 });
 
+function resetBall() {
+  ball.x = canvas.width / 2;
+  ball.y = canvas.height / 2;
+  ball.vx = 0;
+  ball.vy = 0;
+}
+
 function update() {
+  if (!gameRunning) return;
+
   // acceleration from tilt
   ball.vx += tiltX * ACCEL;
   ball.vy += tiltY * ACCEL;
@@ -92,10 +119,31 @@ function update() {
     ball.y = canvas.height - ball.r;
     ball.vy *= -BOUNCE;
   }
+
+  // check if ball fell into hole
+  const dx = ball.x - hole.x;
+  const dy = ball.y - hole.y;
+  const dist = Math.sqrt(dx*dx + dy*dy);
+  if (dist < ball.r + hole.r) {
+    gameRunning = false;
+    document.getElementById("menu").style.display = "block";
+  }
 }
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // draw neon hole
+  ctx.save();
+  ctx.fillStyle = "#00ffea";       // neon cyan color
+  ctx.shadowBlur = 30;             // glow size
+  ctx.shadowColor = "#00ffea";     // glow color
+  ctx.beginPath();
+  ctx.arc(hole.x, hole.y, hole.r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // draw ball
   ctx.fillStyle = "cyan";
   ctx.beginPath();
   ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
